@@ -1,75 +1,41 @@
-#include <iostream>
-#include <vector>
-#include <cmath>
 
-// Вычисление обычной корреляции между двумя массивами
-double calculateCorrelation(const std::vector<int>& x, const std::vector<int>& y) {
-    double meanX = 0, meanY = 0;
-    for (int i = 0; i < x.size(); ++i) {
-        meanX += x[i];
-        meanY += y[i];
-    }
-    meanX /= x.size();
-    meanY /= y.size();
+sequence1 = randi([-10, 10], 1, 20);
+sequence2 = randi([-10, 10], 1, 20);
+sequence3 = randi([-10, 10], 1, 20);
+sequence4 = randi([-10, 10], 1, 20);
 
-    double numerator = 0, denominatorX = 0, denominatorY = 0;
-    for (int i = 0; i < x.size(); ++i) {
-        numerator += (x[i] - meanX) * (y[i] - meanY);
-        denominatorX += std::pow(x[i] - meanX, 2);
-        denominatorY += std::pow(y[i] - meanY, 2);
-    }
 
-    return numerator; // Обычная корреляция
-}
+[acf1, lags1] = xcorr(sequence1, 'coeff');
+[acf2, lags2] = xcorr(sequence2, 'coeff');
+[acf3, lags3] = xcorr(sequence3, 'coeff');
+[acf4, lags4] = xcorr(sequence4, 'coeff');
 
-// Вычисление нормализованной корреляции между двумя массивами
-double calculateNormalizedCorrelation(const std::vector<int>& x, const std::vector<int>& y) {
-    double meanX = 0, meanY = 0;
-    for (int i = 0; i < x.size(); ++i) {
-        meanX += x[i];
-        meanY += y[i];
-    }
-    meanX /= x.size();
-    meanY /= y.size();
 
-    double numerator = 0, denominatorX = 0, denominatorY = 0;
-    for (int i = 0; i < x.size(); ++i) {
-        numerator += (x[i] - meanX) * (y[i] - meanY);
-        denominatorX += std::pow(x[i] - meanX, 2);
-        denominatorY += std::pow(y[i] - meanY, 2);
-    }
+figure;
+plot(lags1, acf1, '-o', 'DisplayName', 'Sequence 1'); hold on;
+plot(lags2, acf2, '-x', 'DisplayName', 'Sequence 2');
+plot(lags3, acf3, '-s', 'DisplayName', 'Sequence 3');
+plot(lags4, acf4, '-d', 'DisplayName', 'Sequence 4');
 
-    return numerator / std::sqrt(denominatorX * denominatorY); // Нормализованная корреляция
-}
+title('Autocorrelation of Four Sequences');
+xlabel('Lag');
+ylabel('Autocorrelation');
+legend;
+grid on;
+hold off;
 
-// Вывод результатов в виде таблицы
-void printCorrelationTable(const std::vector<int>& a, const std::vector<int>& b, const std::vector<int>& c) {
-    double corrAB = calculateCorrelation(a, b);
-    double corrAC = calculateCorrelation(a, c);
-    double corrBC = calculateCorrelation(b, c);
 
-    double normCorrAB = calculateNormalizedCorrelation(a, b);
-    double normCorrAC = calculateNormalizedCorrelation(a, c);
-    double normCorrBC = calculateNormalizedCorrelation(b, c);
+second_max_vals = zeros(1, 4);
+for i = 1:4
+    acf = eval(['acf', num2str(i)]); 
+    acf_sorted = sort(abs(acf), 'descend');
+    second_max_vals(i) = acf_sorted(2); 
+end
 
-    std::cout << "Обычная корреляция между a, b и c:\n";
-    std::cout << "   |  a  |  b  |  c  \n";
-    std::cout << "a  |  -  | " << corrAB << " | " << corrAC << "\n";
-    std::cout << "b  | " << corrAB << " |  -  | " << corrBC << "\n";
-    std::cout << "c  | " << corrAC << " | " << corrBC << " |  -\n";
 
-    std::cout << "\nНормализованная корреляция между a, b и c:\n";
-    std::cout << "   |  a  |  b  |  c  \n";
-    std::cout << "a  |  -  | " << normCorrAB << " | " << normCorrAC << "\n";
-    std::cout << "b  | " << normCorrAB << " |  -  | " << normCorrBC << "\n";
-    std::cout << "c  | " << normCorrAC << " | " << normCorrBC << " |  -\n";
-}
+[~, best_idx] = max(second_max_vals);
+[~, worst_idx] = min(second_max_vals);
 
-int main() {
-    std::vector<int> a = {4, 2, 8, -2, -4, -4, 1, 3};
-    std::vector<int> b = {2, 1, 5, 0, -2, -3, 2, 4};
-    std::vector<int> c = {-4, -1, -3, 1, 2, 5, -1, -2};
 
-    printCorrelationTable(a, b, c);
-    return 0;
-}
+fprintf('Худшая последовательность для синхронизации: Sequence %d (второе максимальное значение = %.4f)\n', best_idx, second_max_vals(best_idx));
+fprintf('Л последовательность для синхронизации: Sequence %d (второе максимальное значение = %.4f)\n', worst_idx, second_max_vals(worst_idx));
